@@ -112,7 +112,7 @@ for (current_method in c("Reads/g", "Relative Abundance")) {
 }
 
 
-# jpeg("./Images/Deseq_Combined_All_ASVs.jpeg", res = 400, height = 4000, width = 5000)
+jpeg("./Images/Deseq_Combined_All_ASVs.jpeg", res = 400, height = 4000, width = 5000)
 ASV_plot = ggarrange(`Reads/g_Identifier_plot`, `Relative Abundance_Identifier_plot`, 
            ncol = 2,common.legend = T)
 
