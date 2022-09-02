@@ -52,8 +52,7 @@ sample_data(OG_PS) = sample_data(Neurological)
 ###########################################################################
 #Filter low prevalent ASVS 
 ps.filtered = filter_taxa(OG_PS, function(x) sum(x > 5) >= 5, TRUE)
-#Glom to Genus 
-ps.filtered = tax_glom(ps.filtered, "Genus")
+
 #Save Final metadate CSV and phyloseq object in working directory 
 write.csv(Neurological, "T1D_Samples.csv", row.names = F)
 saveRDS(ps.filtered, "Filters_PS.RDS")
