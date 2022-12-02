@@ -1,0 +1,151 @@
+library(ggplot2)
+library(ggpubr)
+
+###### 
+#File import 
+###### 
+#File import 
+taxa_identifiers = read.csv("Taxa_identifiers_v2.csv")
+Total_reads = readRDS("Filters_PS.RDS")
+physeq_tax = data.frame(tax_table(Total_reads))
+physeq_tax = subset(physeq_tax, is.na(physeq_tax$Genus) == F)
+tax_table(Total_reads) = tax_table(as.matrix(physeq_tax))
+
+Sample_data = read.csv("Matched_Samples.csv")
+rownames(Sample_data) = Sample_data$ID
+sample_data(Total_reads) = sample_data(Sample_data)
+
+Controls = subset(Sample_data, Sample_data$Autoimmune_2_groups == "Control")
+T1D = subset(Sample_data, Sample_data$Autoimmune_2_groups != "Control")
+
+current_grouping = "ASV"
+for (current_grouping in c("Genus", "ASV")) {
+  Total_reads_1 = Total_reads
+  if (current_grouping == "Genus") {
+    Total_reads_1 = tax_glom(Total_reads_1, "Genus")
+    Tax_df = data.frame(tax_table(Total_reads_1))
+    Tax_df$ASV = rownames(Tax_df)
+    Names = Tax_df[,c("Genus", "ASV")]
+    rownames(Names) = Names$ASV
+    colnames(Names) = c("Grouping", "ASV")
+    Prev_threshold = 5
+    Important_list = c("Agathobacter", "Alistipes", "Anaerostipes", "Bacteroides",
+                       "Blautia", "Eggerthella", "Eneterococcus", "Flavonifractor", 
+                       "Fusicatenibacter", "Gemella", "Granulicatella", "Hungatella", 
+                       "Romboutsia", "Roseburia", "Ruminococcus", "TM7x", "UBA1819",
+                       "Eubacterium", "Parasutterella", "Porphyromonas")
+  } else {
+    Tax_df = taxa_identifiers
+    Names = Tax_df[,c("Identifier", "ASV")]
+    rownames(Names) = Names$ASV
+    colnames(Names) = c("Grouping", "ASV")
+    Prev_threshold = 10
+    Important_list = c("387", "434", "747", "719", "3665", "4451", 
+                       "5640", "10427", "10084", "10087",
+                       "2752", "3699", "3895", "3905", "3992", "9845", "10085")
+  }
+  #Controls
+  Controls_ps = Total_reads_1; sample_data(Controls_ps) = sample_data(Controls)
+  Controls_otu = data.frame(otu_table(Controls_ps))
+  names(Controls_otu) <- Names$Grouping[match(names(Controls_otu), Names$ASV)]
+  #T1D
+  T1D_ps = Total_reads_1; sample_data(T1D_ps) = sample_data(T1D)
+  T1D_otu = data.frame(otu_table(T1D_ps))
+  names(T1D_otu) <- Names$Grouping[match(names(T1D_otu), Names$ASV)]
+  current_taxa = colnames(T1D_otu)[1]
+  
+  zero_data = data.frame()
+  Important_data = data.frame()
+  for (current_taxa in colnames(T1D_otu)) {
+    T1D_prev = round(nrow(subset(T1D_otu, T1D_otu[,current_taxa] > 0))/nrow(T1D_otu),3)*100
+    Controls_prev = round(nrow(subset(Controls_otu, Controls_otu[,current_taxa] > 0))/nrow(Controls_otu),3)*100
+    current_row = data.frame("Taxa" = current_taxa, "Prevalence" = c(Controls_prev,T1D_prev), "Group" = c("Control", "Type 1 Diabetes"))
+    if (current_grouping == "Genus") {
+      if (current_taxa %in% Important_list) {
+        Important_data = rbind(Important_data, current_row)
+      } else if ((T1D_prev == 0 & Controls_prev >= 10 )| 
+                 (Controls_prev == 0 & T1D_prev >= 10)) {
+        zero_data = rbind(zero_data, current_row)
+      }  
+    } else {
+      current_taxa_1 = tail(unlist(strsplit(current_taxa, "_")),1)
+      
+      if (current_taxa_1 %in% Important_list) {
+        Important_data = rbind(Important_data, current_row)
+      } else if ((T1D_prev == 0 & Controls_prev >= 10 )| 
+                 (Controls_prev == 0 & T1D_prev >= 10)) {
+        zero_data = rbind(zero_data, current_row)
+      }  
+    }
+  }
+  
+  Important_data$Taxa = gsub("_NA_", "\n", Important_data$Taxa)
+  Important_data$Taxa = gsub("_", "\n", Important_data$Taxa)
+  Important_data$Taxa = gsub("Clostridium\nsensu\nstricto\n1\nbutyricum", 
+                             "Clostridium\nsensu stricto 1\nbutyricum", Important_data$Taxa)
+  
+  Important_graph = ggplot(Important_data, aes(x = Taxa, y = Prevalence, fill = Group)) + 
+    geom_bar(stat = "identity", position = "dodge")+ 
+    xlab("")+ 
+    theme(axis.text.x = element_text(angle = 45, hjust=1),
+          legend.position="top",
+          panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+          panel.background = element_blank(), axis.line = element_line(colour = "black")) + 
+    scale_fill_manual(breaks = c("Control", "Type 1 Diabetes"),
+                       values = c("#888888", "#6699CC"));Important_graph
+  
+  zero_data$Taxa = gsub("_NA_", "\n", zero_data$Taxa)
+  zero_data$Taxa = gsub("_", "\n", zero_data$Taxa)
+  zero_data$Taxa = gsub("Lachnospiraceae\nND3007\ngroup\n", 
+                        "Lachnospiraceae\nND3007 group\n", zero_data$Taxa)
+  Zero_graph = ggplot(zero_data, aes(x = Taxa, y = Prevalence, fill = Group)) + 
+    geom_bar(stat = "identity", position = "dodge")+ 
+    xlab("")+
+    theme(axis.text.x = element_text(angle = 45, hjust=1),
+          legend.position="top",
+          panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+          panel.background = element_blank(), axis.line = element_line(colour = "black")) + 
+    scale_fill_manual(breaks = c("Control", "Type 1 Diabetes"),
+                       values = c("#888888", "#6699CC")); Zero_graph
+  
+  if (current_grouping == "Genus") {
+    #Zero_graph = Zero_graph + geom_hline(yintercept = 10, color = "red") 
+    #Important_graph = 
+    Important_graph =  Important_graph + 
+      geom_hline(aes(yintercept = 70, linetype = "PIME"), colour = "red") +
+      geom_hline(aes(yintercept = 10, linetype = "DESeq2"), colour = "black") +
+      scale_colour_manual(values = c("red","black")) + 
+      scale_linetype_manual(name = "Thresholds", values = c(2,1), 
+                            guide = guide_legend(override.aes = 
+                                                   list(color = c("black", "red"))))
+  } else {
+    #Zero_graph = Zero_graph + geom_hline(yintercept = 20, color = "red") 
+    Important_graph = Important_graph + 
+    geom_hline(aes(yintercept = 50, linetype = "PIME"), colour = "red") +
+      geom_hline(aes(yintercept = 20, linetype = "DESeq2"), colour = "black") +
+      scale_colour_manual(values = c("red","black")) + 
+      scale_linetype_manual(name = "Thresholds", values = c(2,1), 
+                            guide = guide_legend(override.aes = 
+                                                   list(color = c("black", "red"))))
+    }
+  assign(paste(current_grouping, "_Important", sep = ""), Important_graph)
+  assign(paste(current_grouping, "_Zero", sep = ""), Zero_graph)
+}
+
+jpeg("Prevalence_Important.jpeg", res = 600, height = 6000, width = 8000)
+ggarrange(Genus_Important, ASV_Important, common.legend = T, 
+          labels = c("a", "b"),
+          nrow = 2)
+dev.off()
+
+
+
+jpeg("Prevalence.jpeg", res = 600, height = 7000, width = 8000)
+ggarrange(Genus_Important,
+          ASV_Important,
+          ggarrange(Genus_Zero,ASV_Zero,
+                    ncol =2, widths = c(1,10), legend = "none"),
+          common.legend = T, 
+          nrow = 3)
+dev.off()
+
