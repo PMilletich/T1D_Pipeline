@@ -84,36 +84,21 @@ for (current_grouping in c("Genus", "ASV")) {
   Important_data$Taxa = gsub("Clostridium\nsensu\nstricto\n1\nbutyricum", 
                              "Clostridium\nsensu stricto 1\nbutyricum", Important_data$Taxa)
   
-  Important_graph = ggplot(Important_data, aes(x = Taxa, y = Prevalence, fill = Group)) + 
+  Important_graph = ggplot(Important_data, aes(y = Taxa, x = Prevalence, fill = Group)) + 
     geom_bar(stat = "identity", position = "dodge")+ 
-    xlab("")+ 
-    theme(axis.text.x = element_text(angle = 45, hjust=1),
-          legend.position="top",
+    ylab("")+ 
+    theme(legend.position="top",
           panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
           panel.background = element_blank(), axis.line = element_line(colour = "black")) + 
     scale_fill_manual(breaks = c("Control", "Type 1 Diabetes"),
                        values = c("#888888", "#6699CC"));Important_graph
   
-  zero_data$Taxa = gsub("_NA_", "\n", zero_data$Taxa)
-  zero_data$Taxa = gsub("_", "\n", zero_data$Taxa)
-  zero_data$Taxa = gsub("Lachnospiraceae\nND3007\ngroup\n", 
-                        "Lachnospiraceae\nND3007 group\n", zero_data$Taxa)
-  Zero_graph = ggplot(zero_data, aes(x = Taxa, y = Prevalence, fill = Group)) + 
-    geom_bar(stat = "identity", position = "dodge")+ 
-    xlab("")+
-    theme(axis.text.x = element_text(angle = 45, hjust=1),
-          legend.position="top",
-          panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-          panel.background = element_blank(), axis.line = element_line(colour = "black")) + 
-    scale_fill_manual(breaks = c("Control", "Type 1 Diabetes"),
-                       values = c("#888888", "#6699CC")); Zero_graph
-  
   if (current_grouping == "Genus") {
     #Zero_graph = Zero_graph + geom_hline(yintercept = 10, color = "red") 
     #Important_graph = 
     Important_graph =  Important_graph + 
-      geom_hline(aes(yintercept = 70, linetype = "PIME"), colour = "red") +
-      geom_hline(aes(yintercept = 10, linetype = "DESeq2"), colour = "black") +
+      geom_vline(aes(xintercept = 70, linetype = "PIME"), colour = "red") +
+      geom_vline(aes(xintercept = 10, linetype = "DESeq2"), colour = "black") +
       scale_colour_manual(values = c("red","black")) + 
       scale_linetype_manual(name = "Thresholds", values = c(2,1), 
                             guide = guide_legend(override.aes = 
@@ -121,31 +106,18 @@ for (current_grouping in c("Genus", "ASV")) {
   } else {
     #Zero_graph = Zero_graph + geom_hline(yintercept = 20, color = "red") 
     Important_graph = Important_graph + 
-    geom_hline(aes(yintercept = 50, linetype = "PIME"), colour = "red") +
-      geom_hline(aes(yintercept = 20, linetype = "DESeq2"), colour = "black") +
+    geom_vline(aes(xintercept = 50, linetype = "PIME"), colour = "red") +
+      geom_vline(aes(xintercept = 20, linetype = "DESeq2"), colour = "black") +
       scale_colour_manual(values = c("red","black")) + 
       scale_linetype_manual(name = "Thresholds", values = c(2,1), 
                             guide = guide_legend(override.aes = 
                                                    list(color = c("black", "red"))))
     }
   assign(paste(current_grouping, "_Important", sep = ""), Important_graph)
-  assign(paste(current_grouping, "_Zero", sep = ""), Zero_graph)
 }
 
-jpeg("Prevalence_Important.jpeg", res = 600, height = 6000, width = 8000)
-ggarrange(Genus_Important, ASV_Important, common.legend = T, 
+jpeg("Prevalence_Important.jpeg", res = 600, height = 6000, width = 6000)
+ggarrange(Genus_Important, ASV_Important, common.legend = T,
           labels = c("a", "b"),
-          nrow = 2)
+          ncol = 2)
 dev.off()
-
-
-
-jpeg("Prevalence.jpeg", res = 600, height = 7000, width = 8000)
-ggarrange(Genus_Important,
-          ASV_Important,
-          ggarrange(Genus_Zero,ASV_Zero,
-                    ncol =2, widths = c(1,10), legend = "none"),
-          common.legend = T, 
-          nrow = 3)
-dev.off()
-
