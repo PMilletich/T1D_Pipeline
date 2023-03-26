@@ -1,11 +1,14 @@
 #PIME; https://github.com/microEcology/pime
+library(phyloseq)
 library(pime)
 library(ggplot2)
 library(ggpubr) #ggarrange
+library(microbiomeMarker)
 
+setwd("~/Desktop/T1D_Diabetologia/")
 #####
 # File import 
-Sample_data = read.csv("Matched_Samples.csv")
+Sample_data = read.csv("Matched_Samples_Age.csv")
 Sample_data$Group = ifelse(Sample_data$Autoimmune_2_groups == "Control", "Controls", "Type 1 Diabetes")
 Sample_data$Age.collected.summary = paste("", Sample_data$Age.collected.summary, sep = "")
 Sample_data_OG = Sample_data
@@ -20,7 +23,7 @@ Sample_data$Age.collected.summary = paste(Sample_data$Age.collected.summary, "_M
 ####
 #User input 
 alpha = 0.05
-seed_max = 100
+seed_max = 10
 Control_Num = 2
 
 current_glom = "Identifier"
@@ -247,7 +250,7 @@ for (current_method in c("Total", "Relative")) {
       if (T1D < 0 | Control < 0) {
         PIME_MDA_subset = subset(PIME_MDA_subset, PIME_MDA_subset$Taxa != current_tax)
       } else {
-        new_row = data.frame("Group" = c("Controls", "Type 1 Diabetes"),
+        new_row = data.frame("Group" = c("Type 1 Diabetes", "Controls"),
                              "Average" = c(T1D, Control), 
                              "SD" = c(T1D_sd, Control_sd), 
                              "Taxa" = current_tax)
