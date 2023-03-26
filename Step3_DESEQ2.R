@@ -4,8 +4,9 @@ library(dplyr)
 
 ###### 
 #File import 
+setwd("~/Desktop/T1D_Diabetologia/")
 taxa_identifiers = read.csv("Taxa_identifiers_v2.csv")
-Total_reads = readRDS("Filters_PS.RDS") #Step 1
+Total_reads = readRDS("Filters_PS.RDS")
 physeq_tax = data.frame(tax_table(Total_reads))
 physeq_tax = subset(physeq_tax, is.na(physeq_tax$Genus) == F)
 tax_table(Total_reads) = tax_table(as.matrix(physeq_tax))
@@ -75,7 +76,7 @@ for (current_method in c("Total", "Relative")) {
       prev_thresh = 0.1
       #Taxa Identification 
     } else {
-      ps.filtered.1 = ps.filtered.1
+      ps.filtered.1 = ps.filtered.1x
       prev_thresh = 0.2
     }
     
@@ -190,9 +191,11 @@ for (current_method in c("Total", "Relative")) {
       scale_color_manual(breaks = c("Controls", "Type 1 Diabetes" ),
                          values = c("#888888", "#6699CC")); LFC_plot
     
-    jpeg(paste("Deseq_", current_glom_1, "_", prev_thresh, "_", current_method, "_TA.jpeg", sep = ""), 
+    jpeg(paste("./Review_2/Deseq_", current_glom_1, "_", prev_thresh, "_", current_method, "_TA.jpeg", sep = ""), 
          res = 600, height = 2000, width = 4000)
     print(LFC_plot)
     dev.off()
+    
+    write.csv(Actual_sign_subset, paste("./CSV_files/Deseq_", current_method, "_", current_glom_1, "LFC.csv", sep = ""), row.names = F)
   }
 }
