@@ -3,8 +3,8 @@ library(phyloseq) #https://www.bioconductor.org/packages/release/bioc/html/phylo
 '%notin%' = Negate('%in%')
 
 #Read in original Phyloseq data and original metadata 
-OG_PS = readRDS("phyloseq.13.Final.RDS") 
-Start = read.csv("Regions_MetaData_2022_Neuro.csv")
+OG_PS = readRDS("Silva138_2022_v2.RDS") 
+Start = data.frame(sample_data(OG_PS))
 #Combine phyloseq object and sample data 
 rownames(Start) = Start$ID  
 sample_data(OG_PS) = sample_data(Start)
@@ -25,12 +25,12 @@ With_Gut_only_1000 = subset(With_Gut_only_1000, is.na(With_Gut_only_1000$copies_
 sample_data(OG_PS) = sample_data(With_Gut_only_1000)
 
 ###########################################################################
- #Remove Autoimmune 
+#Remove Autoimmune 
 table(With_Gut_only_1000$Autoimmune_Disorder)
 ###########################################################################
 #Save those that are either T1D, or controls 
 With_Gut_T1D_only = subset(With_Gut_only_1000, grepl("T1D", With_Gut_only_1000$Autoimmune_Disorder) == T |
-                                With_Gut_only_1000$Autoimmune_Disorder == "Control")
+                             With_Gut_only_1000$Autoimmune_Disorder == "Control")
 #Save Sample data to phyloseq object
 rownames(With_Gut_T1D_only) = With_Gut_T1D_only$ID
 sample_data(OG_PS) = sample_data(With_Gut_T1D_only)
